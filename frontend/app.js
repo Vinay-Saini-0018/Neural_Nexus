@@ -59,6 +59,12 @@ const elements = {
     historyList: document.getElementById('history-list'),
     btnClearHistory: document.getElementById('btn-clear-history'),
 
+    //-------------
+    authorizedScan: document.getElementById('authorized-scan'),
+    primaryToken: document.getElementById('primary-token'),
+    secondaryToken: document.getElementById('secondary-token'),
+    objectId: document.getElementById('object-id'),
+
     // Modal
     backendModal: document.getElementById('backend-modal'),
     btnCloseModal: document.getElementById('btn-close-modal'),
@@ -205,10 +211,11 @@ async function runInspection(rawUrl) {
     elements.aiTraceBox.innerHTML = '';
 
     const traceSteps = [
-        "🧠 Agentic Step 1/4: Ingesting API Specification & Parameter Schemas...",
-        "⚡ Agentic Step 2/4: Simulating OWASP API1:2023 Broken Object-Level Authorization (BOLA)...",
-        "🔍 Agentic Step 3/4: Evaluating Excessive Data Exposure & PII Leak Vector...",
-        "🛡️ Agentic Step 4/4: Calculating Security Health Score & Code Remedies..."
+        "🔐 Step 1/5: Validating authorized scan configuration...",
+        "📘 Step 2/5: Detecting endpoint or OpenAPI specification...",
+        "🌐 Step 3/5: Performing bounded runtime HTTP checks...",
+        "🔎 Step 4/5: Analyzing response data and authorization behavior...",
+        "📊 Step 5/5: Building evidence-backed security report..."
     ];
 
     for (let i = 0; i < traceSteps.length; i++) {
@@ -221,12 +228,7 @@ async function runInspection(rawUrl) {
     }
 
     try {
-        let result;
-        if (state.mode === 'server') {
-            result = await fetchFromBackend(rawUrl);
-        } else {
-            result = clientAnalyzeApiUrl(rawUrl);
-        }
+        const result = await fetchFromBackend(rawUrl);
 
         state.currentAnalysis = result;
         addToHistory(result);
@@ -247,18 +249,90 @@ async function runInspection(rawUrl) {
 }
 
 async function fetchFromBackend(url) {
-    const response = await fetch(state.backendUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-    });
 
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const authorized =
+        elements.authorizedScan.checked;
+
+    if (!authorized) {
+
+        throw new Error(
+            'Please confirm that you are authorized to test this API.'
+        );
     }
 
-    const data = await response.json();
-    return processResultData(data, url);
+    const objectId =
+        elements.objectId.value.trim();
+
+    const payload = {
+        url: url,
+
+        scan: {
+            authorized: true,
+
+            bearer_token:
+                elements.primaryToken.value.trim() || null,
+
+            second_bearer_token:
+                elements.secondaryToken.value.trim() || null,
+
+            object_ids:
+                objectId ? [objectId] : [],
+
+            timeout_seconds: 8,
+
+            rate_test_requests: 6,
+
+            rate_test_delay_seconds: 0.25,
+
+            max_endpoints: 30
+        }
+    };
+
+    const response = await fetch(
+        state.backendUrl,
+        {
+            method: 'POST',
+
+            headers: {
+                'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify(payload)
+        }
+    );
+
+    if (!response.ok) {
+
+        let message =
+            `HTTP ${response.status}`;
+
+        try {
+
+            const errorData =
+                await response.json();
+
+            if (errorData.detail) {
+
+                message =
+                    typeof errorData.detail === 'string'
+                        ? errorData.detail
+                        : JSON.stringify(
+                            errorData.detail
+                        );
+            }
+
+        } catch (_) {}
+
+        throw new Error(message);
+    }
+
+    const data =
+        await response.json();
+
+    return processResultData(
+        data,
+        url
+    );
 }
 
 // OWASP API Security Diagnostic Rules Engine (BOLA, Excessive Data, Rate Limiting)
@@ -417,22 +491,69 @@ function clientAnalyzeApiUrl(rawUrl) {
 }
 
 function processResultData(data, rawUrl) {
-    const issues = data.issues || [];
-    const criticalCount = issues.filter(i => i.severity === 'critical').length;
-    const warningCount = issues.filter(i => i.severity === 'warning').length;
-    const passedCount = Math.max(0, 8 - issues.length);
+
+    const issues =
+        data.issues || [];
+
+    const criticalCount =
+        issues.filter(
+            i => i.severity === 'critical'
+        ).length;
+
+    const warningCount =
+        issues.filter(
+            i =>
+                i.severity === 'warning' ||
+                i.severity === 'high'
+        ).length;
 
     return {
-        url: data.url || rawUrl,
-        sanitizedUrl: data.sanitizedUrl || rawUrl,
-        score: typeof data.score === 'number' ? data.score : 85,
-        status: data.status || (criticalCount > 0 ? 'critical' : warningCount > 0 ? 'warning' : 'clean'),
+
+        url:
+            data.url || rawUrl,
+
+        sanitizedUrl:
+            data.sanitizedUrl || rawUrl,
+
+        score:
+            typeof data.score === 'number'
+                ? data.score
+                : 0,
+
+        status:
+            data.status ||
+            (
+                criticalCount > 0
+                    ? 'critical'
+                    : warningCount > 0
+                        ? 'warning'
+                        : 'clean'
+            ),
+
         criticalCount,
+
         warningCount,
-        passedCount,
+
+        passedCount:
+            Math.max(
+                0,
+                (data.checks_run || 0) -
+                issues.length
+            ),
+
         issues,
-        anatomy: data.anatomy || {},
-        timestamp: new Date().toLocaleTimeString()
+
+        anatomy:
+            data.anatomy || {},
+
+        endpointsScanned:
+            data.endpoints_scanned || 0,
+
+        requestsMade:
+            data.requests_made || 0,
+
+        timestamp:
+            new Date().toLocaleTimeString()
     };
 }
 

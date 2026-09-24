@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="APISentinel AI - Autonomous LLM-Powered API Security & Vulnerability Diagnostic Engine. Detect BOLA, Excessive Data Exposure, and Auth flaws in seconds.">
+    <meta name="description"
+        content="APISentinel AI - Autonomous LLM-Powered API Security & Vulnerability Diagnostic Engine. Detect BOLA, Excessive Data Exposure, and Auth flaws in seconds.">
     <title>APISentinel AI — Autonomous API Vulnerability Auditor</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <!-- Background Animated Mesh Gradient -->
     <div class="bg-glow bg-glow-1"></div>
@@ -22,10 +27,11 @@
         <header class="navbar">
             <div class="brand">
                 <div class="brand-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <circle cx="12" cy="11" r="3"/>
-                        <path d="M12 14v3"/>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        <circle cx="12" cy="11" r="3" />
+                        <path d="M12 14v3" />
                     </svg>
                 </div>
                 <div class="brand-text">
@@ -43,13 +49,21 @@
                 </div>
 
                 <button class="btn-secondary" id="btn-backend-config" title="Configure Python Backend API Endpoint">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
                     <span>Backend Config</span>
                     <span class="status-dot mode-client" id="mode-indicator-dot"></span>
                 </button>
-                
+
                 <button class="btn-secondary" id="btn-toggle-history" title="Audit Scan History">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                        <path d="M3 3v5h5" />
+                        <path d="M12 7v5l4 2" />
+                    </svg>
                     <span>Scan History</span>
                     <span class="counter-badge" id="history-count">0</span>
                 </button>
@@ -61,24 +75,44 @@
             <!-- Hero Header Section -->
             <section class="hero-section">
                 <div class="hero-badge">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    </svg>
                     <span>AI/ML API Vulnerability Reasoning Engine</span>
                 </div>
                 <h1 class="hero-title">Continuous API Vulnerability & BOLA Security Auditor</h1>
-                <p class="hero-subtitle">Enter an API Endpoint URL, OpenAPI Spec, or backend path. Our LLM Agent evaluates authorization logic, excessive data exposure, rate limiting, and produces step-by-step remediation hints.</p>
+                <p class="hero-subtitle">Enter an API Endpoint URL, OpenAPI Spec, or backend path. Our LLM Agent
+                    evaluates authorization logic, excessive data exposure, rate limiting, and produces step-by-step
+                    remediation hints.</p>
 
                 <!-- URL & Spec Input Card -->
                 <form id="url-inspect-form" class="search-box-card">
                     <div class="input-container">
                         <div class="input-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                            </svg>
                         </div>
-                        <input type="text" id="url-input" class="url-input-field" placeholder="Enter API URL or OpenAPI spec (e.g. https://api.myapp.com/v1/orders/{order_id} or http://localhost:8000/openapi.json)" autocomplete="off" spellcheck="false" required />
-                        <button type="button" class="btn-clear-input" id="btn-clear-input" title="Clear text" style="display: none;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <input type="text" id="url-input" class="url-input-field"
+                            placeholder="Enter API URL or OpenAPI spec (e.g. https://api.myapp.com/v1/orders/{order_id} or http://localhost:8000/openapi.json)"
+                            autocomplete="off" spellcheck="false" required />
+                        <button type="button" class="btn-clear-input" id="btn-clear-input" title="Clear text"
+                            style="display: none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
                         </button>
                         <button type="submit" class="btn-primary-action" id="btn-analyze">
-                            <svg class="icon-scan" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                            <svg class="icon-scan" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.2">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.3-4.3" />
+                            </svg>
                             <span>Run AI Audit</span>
                         </button>
                     </div>
@@ -87,21 +121,74 @@
                     <div class="preset-section">
                         <span class="preset-label">Pre-configured Test APIs:</span>
                         <div class="preset-chips">
-                            <button type="button" class="chip-preset" data-url="https://api.acmeshop.com/v1/orders/109482?user_id=884">
+                            <button type="button" class="chip-preset"
+                                data-url="https://api.acmeshop.com/v1/orders/109482?user_id=884">
                                 🚨 BOLA / IDOR Flaw (/orders/{id})
                             </button>
-                            <button type="button" class="chip-preset" data-url="https://api.fintech.io/v2/users/profile?include_private_keys=true">
+                            <button type="button" class="chip-preset"
+                                data-url="https://api.fintech.io/v2/users/profile?include_private_keys=true">
                                 🔓 Excessive Data Exposure (PII Leak)
                             </button>
-                            <button type="button" class="chip-preset" data-url="http://auth-service.net/v1/auth/otp-verify?phone=+15550192">
+                            <button type="button" class="chip-preset"
+                                data-url="http://auth-service.net/v1/auth/otp-verify?phone=+15550192">
                                 ⚡ Missing Rate Limiting (OTP Endpoint)
                             </button>
-                            <button type="button" class="chip-preset" data-url="https://api.saasplatform.com/v1/health/ping">
+                            <button type="button" class="chip-preset"
+                                data-url="https://api.saasplatform.com/v1/health/ping">
                                 ✅ Secure Compliant API
                             </button>
                         </div>
                     </div>
+
                 </form>
+                <!-- =========================================================
+     AUTHORIZED RUNTIME SCAN CONFIGURATION
+     ========================================================= -->
+
+                <div class="scan-config-panel">
+
+                    <h3>Authorized Runtime Scan</h3>
+
+                    <label class="form-label">
+                        <input type="checkbox" id="authorized-scan" />
+
+                        I confirm that I am authorized to test this API
+                    </label>
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Primary Bearer Token
+                        </label>
+
+                        <input type="password" id="primary-token" class="form-input" placeholder="Optional"
+                            autocomplete="off" />
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Secondary Bearer Token
+                        </label>
+
+                        <input type="password" id="secondary-token" class="form-input"
+                            placeholder="Optional — required for cross-identity BOLA testing" autocomplete="off" />
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Object ID
+                        </label>
+
+                        <input type="text" id="object-id" class="form-input"
+                            placeholder="Optional explicit test object ID" />
+
+                    </div>
+
+                </div>
             </section>
 
             <!-- Loading State with AI Agentic Reasoning Trace -->
@@ -110,7 +197,8 @@
                 <div class="loader-content">
                     <h3 id="loader-status-text">AI Agent Ingesting API Definition...</h3>
                     <div class="ai-trace-box" id="ai-trace-box">
-                        <div class="trace-step step-active">🧠 Agentic Step 1/4: Constructing Authorization Context Graph...</div>
+                        <div class="trace-step step-active">🧠 Agentic Step 1/4: Constructing Authorization Context
+                            Graph...</div>
                     </div>
                 </div>
             </div>
@@ -124,7 +212,8 @@
                         <div class="gauge-box">
                             <svg class="gauge-svg" viewBox="0 0 100 100">
                                 <circle class="gauge-bg" cx="50" cy="50" r="42"></circle>
-                                <circle class="gauge-fill" id="gauge-fill-circle" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="264"></circle>
+                                <circle class="gauge-fill" id="gauge-fill-circle" cx="50" cy="50" r="42"
+                                    stroke-dasharray="264" stroke-dashoffset="264"></circle>
                             </svg>
                             <div class="gauge-text">
                                 <span class="gauge-score" id="summary-score">0</span>
@@ -137,7 +226,8 @@
                                 <span class="category-pill" id="summary-risk-pill">OWASP Risk</span>
                             </div>
                             <h2 class="summary-url-display" id="summary-url-text">https://...</h2>
-                            <p class="summary-description" id="summary-desc-text">Analysis completed. Review diagnostic findings below.</p>
+                            <p class="summary-description" id="summary-desc-text">Analysis completed. Review diagnostic
+                                findings below.</p>
                         </div>
                     </div>
 
@@ -161,11 +251,18 @@
                 <div class="card anatomy-card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M4 6h16M4 12h16M4 18h7" />
+                            </svg>
                             API Endpoint Anatomy & Parameter Vector
                         </h3>
                         <button class="btn-text-action" id="btn-copy-sanitized" title="Copy Sanitized Target URL">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
                             <span>Copy Clean Endpoint</span>
                         </button>
                     </div>
@@ -180,19 +277,29 @@
                     <div class="card-header-bar">
                         <div class="card-title-group">
                             <h3 class="card-title">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path
+                                        d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
                                 AI Diagnostic Findings: Root Cause & Remediation Hints
                             </h3>
-                            <span class="subtitle-text">Detailed breakdown of identified vulnerabilities, exact code locations, and fix recommendations</span>
+                            <span class="subtitle-text">Detailed breakdown of identified vulnerabilities, exact code
+                                locations, and fix recommendations</span>
                         </div>
 
                         <!-- Filter Tabs -->
                         <div class="filter-tabs">
-                            <button class="tab-btn active" data-filter="all" id="tab-all">All (<span id="filter-all-count">0</span>)</button>
+                            <button class="tab-btn active" data-filter="all" id="tab-all">All (<span
+                                    id="filter-all-count">0</span>)</button>
                             <button class="tab-btn" data-filter="bola" id="tab-bola">BOLA / IDOR</button>
-                            <button class="tab-btn" data-filter="data_exposure" id="tab-exposure">Excessive Data</button>
+                            <button class="tab-btn" data-filter="data_exposure" id="tab-exposure">Excessive
+                                Data</button>
                             <button class="tab-btn" data-filter="rate_limit" id="tab-rate">Rate Limiting</button>
-                            <button class="tab-btn" data-filter="critical" id="tab-critical">Critical (<span id="filter-critical-count">0</span>)</button>
+                            <button class="tab-btn" data-filter="critical" id="tab-critical">Critical (<span
+                                    id="filter-critical-count">0</span>)</button>
                         </div>
                     </div>
 
@@ -204,10 +311,15 @@
                     <!-- Clean State Box -->
                     <div class="clean-state-box" id="clean-state-box" style="display: none;">
                         <div class="clean-icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10B981"
+                                stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
                         </div>
                         <h3>No API Vulnerabilities Detected!</h3>
-                        <p>The API endpoint adheres to OWASP API Security top recommendations: authorization checks are present, response data is tightly scoped, and rate limiting headers are enabled.</p>
+                        <p>The API endpoint adheres to OWASP API Security top recommendations: authorization checks are
+                            present, response data is tightly scoped, and rate limiting headers are enabled.</p>
                     </div>
                 </div>
 
@@ -237,7 +349,8 @@
                 </div>
                 <div class="modal-body">
                     <p class="modal-intro">
-                        Connect this frontend to your custom Python API Backend (FastAPI / Flask). When enabled, audit requests are posted directly to your backend endpoint.
+                        Connect this frontend to your custom Python API Backend (FastAPI / Flask). When enabled, audit
+                        requests are posted directly to your backend endpoint.
                     </p>
 
                     <div class="form-group">
@@ -250,7 +363,8 @@
 
                     <div class="form-group" id="endpoint-input-group" style="display: none;">
                         <label for="backend-endpoint-url" class="form-label">Backend API URL:</label>
-                        <input type="text" id="backend-endpoint-url" class="form-input" value="http://localhost:8000/analyze" placeholder="http://localhost:8000/analyze" />
+                        <input type="text" id="backend-endpoint-url" class="form-input"
+                            value="http://localhost:8000/analyze" placeholder="http://localhost:8000/analyze" />
                         <span class="help-text">Frontend sends `POST` request with JSON `{ "url": "..." }`</span>
                     </div>
 
@@ -259,7 +373,7 @@
                             <span>Expected Response JSON Contract (from Python API):</span>
                             <button class="btn-copy-code" id="btn-copy-schema">Copy JSON Contract</button>
                         </div>
-<pre><code class="language-json">{
+                        <pre><code class="language-json">{
   "url": "https://api.acmeshop.com/v1/orders/109482?user_id=884",
   "score": 45,
   "status": "critical",
@@ -290,10 +404,12 @@
 
         <!-- Footer -->
         <footer class="app-footer">
-            <p>APISentinel AI — Autonomous API Security Auditor & Diagnostic Platform &bull; Designed for Engineers & AppSec Teams</p>
+            <p>APISentinel AI — Autonomous API Security Auditor & Diagnostic Platform &bull; Designed for Engineers &
+                AppSec Teams</p>
         </footer>
     </div>
 
     <script src="app.js" type="module"></script>
 </body>
+
 </html>

@@ -1,170 +1,420 @@
 """
-Static Schema Rule Inspector for OpenAPI Specs & Route Configurations.
-Evaluates static security policies: BOLA parameter patterns, excessive data flags, and rate limiting setup.
+Runtime security rules.
+
+Important:
+A rule should distinguish between:
+
+1. Evidence observed during an HTTP test.
+2. A heuristic / informational observation.
+
+We do not label a vulnerability as confirmed unless runtime evidence
+supports it.
 """
 
-import urllib.parse
+from __future__ import annotations
 
-def evaluate_openapi_schema(spec: dict) -> list:
-    """
-    Evaluates an OpenAPI spec dict for static security declarations.
-    """
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
+
+
+SEVERITY_WEIGHT = {
+    "critical": 35,
+    "high": 25,
+    "medium": 15,
+    "warning": 8,
+    "info": 3,
+}
+
+
+def issue(
+    issue_id: str,
+    severity: str,
+    category: str,
+    title: str,
+    where: str,
+    why: str,
+    hint: str,
+    evidence: Optional[Dict[str, Any]] = None,
+    code_snippet: Optional[str] = None,
+) -> Dict[str, Any]:
+
+    return {
+        "id": issue_id,
+        "severity": severity,
+        "category": category,
+        "title": title,
+        "where": where,
+        "why": why,
+        "hint": hint,
+        "codeSnippet": code_snippet,
+        "evidence": evidence,
+    }
+
+
+def evaluate_runtime_result(
+    target_url: str,
+    method: str,
+    baseline: Any,
+    unauthenticated: Any = None,
+    rate_results: Optional[List[Any]] = None,
+    sensitive_fields: Optional[List[str]] = None,
+    bola_result: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, Any]]:
+
     findings = []
-    
-    paths = spec.get("paths", {})
-    if not paths:
-        return findings
 
-    for path, methods in paths.items():
-        for method, details in methods.items():
-            if not isinstance(details, dict):
-                continue
-            
-            # Check 1: Missing authentication scope declarations
-            security = details.get("security", spec.get("security", []))
-            if not security:
-                findings.append({
-                    "id": "missing_auth_scheme",
-                    "severity": "warning",
-                    "category": "security",
-                    "title": f"Missing Explicit Security Scheme on {method.upper()} {path}",
-                    "where": f"Path '{path}' [{method.upper()}]",
-                    "why": "Endpoint path operation does not explicitly enforce a security requirement (e.g., Bearer/OAuth2).",
-                    "hint": "Add 'security' requirements block in OpenAPI specification for this path."
-                })
+    # ---------------------------------------------------------
+    # Authentication
+    # ---------------------------------------------------------
 
-            # Check 2: Potential BOLA / IDOR path parameters
-            parameters = details.get("parameters", [])
-            has_id_param = any(p.get("name", "").endswith("_id") or p.get("name") == "id" for p in parameters if isinstance(p, dict))
-            if has_id_param and not security:
-                findings.append({
-                    "id": "unprotected_bola_route",
-                    "severity": "critical",
-                    "category": "bola",
-                    "title": f"Unauthenticated Resource Identifier on {path}",
-                    "where": f"Path parameter in '{path}'",
-                    "why": "Path contains object identifier parameters without enforcing authentication, creating high risk for Broken Object-Level Authorization (BOLA).",
-                    "hint": "Enforce server-side JWT ownership verification and add authorization policies.",
-                    "codeSnippet": "@app.get('/api/resource/{id}')\ndef get_res(id: str, user = Depends(get_current_user)):\n    if res.owner_id != user.id:\n        raise HTTPException(403)"
-                })
+    if unauthenticated:
+
+        status = unauthenticated.status_code
+
+        if status is not None and 200 <= status < 300:
+
+            findings.append(
+                issue(
+                    issue_id="auth_runtime_exposure",
+                    severity="high",
+                    category="authentication",
+                    title="Protected-resource access succeeded without credentials",
+                    where=f"{method} {target_url}",
+                    why=(
+                        "A request without an Authorization header received "
+                        "a successful HTTP response."
+                    ),
+                    hint=(
+                        "Verify that this endpoint is intentionally public. "
+                        "If it is protected, enforce authentication server-side."
+                    ),
+                    evidence={
+                        "method": method,
+                        "url": target_url,
+                        "status_code": status,
+                        "response_excerpt": str(
+                            unauthenticated.body
+                        )[:1000],
+                    },
+                )
+            )
+
+    # ---------------------------------------------------------
+    # Excessive / sensitive response data
+    # ---------------------------------------------------------
+
+    if sensitive_fields:
+
+        findings.append(
+            issue(
+                issue_id="runtime_sensitive_response_fields",
+                severity="high",
+                category="data_exposure",
+                title="Sensitive fields observed in API response",
+                where=f"{method} {target_url}",
+                why=(
+                    "The live API response contained field names commonly "
+                    "associated with secrets, credentials, tokens, or sensitive data."
+                ),
+                hint=(
+                    "Return only fields required by the API contract and "
+                    "remove secrets/internal fields from public response DTOs."
+                ),
+                evidence={
+                    "method": method,
+                    "url": target_url,
+                    "status_code": getattr(
+                        baseline,
+                        "status_code",
+                        None,
+                    ),
+                    "sensitive_fields": sensitive_fields,
+                    "response_excerpt": str(
+                        getattr(baseline, "body", "")
+                    )[:1000],
+                },
+                code_snippet=(
+                    "class PublicResponse(BaseModel):\n"
+                    "    id: str\n"
+                    "    name: str\n"
+                    "    # Do not expose internal secrets"
+                ),
+            )
+        )
+
+    # ---------------------------------------------------------
+    # Rate limiting
+    # ---------------------------------------------------------
+
+    if rate_results:
+
+        statuses = [
+            result.status_code
+            for result in rate_results
+            if result.status_code is not None
+        ]
+
+        if statuses and 429 not in statuses:
+
+            findings.append(
+                issue(
+                    issue_id="rate_limit_not_observed",
+                    severity="warning",
+                    category="rate_limit",
+                    title="Rate limiting was not observed during bounded test",
+                    where=f"{method} {target_url}",
+                    why=(
+                        f"{len(statuses)} sequential requests were made "
+                        "without receiving HTTP 429."
+                    ),
+                    hint=(
+                        "Confirm the endpoint's documented rate limits and "
+                        "consider server-side throttling for sensitive operations."
+                    ),
+                    evidence={
+                        "method": method,
+                        "url": target_url,
+                        "requests_tested": len(statuses),
+                        "status_codes": statuses,
+                    },
+                )
+            )
+
+    # ---------------------------------------------------------
+    # BOLA
+    # ---------------------------------------------------------
+
+    if bola_result:
+
+        first = bola_result.get("first")
+        second = bola_result.get("second")
+
+        if first and second:
+
+            first_success = (
+                first.status_code is not None
+                and 200 <= first.status_code < 300
+            )
+
+            second_success = (
+                second.status_code is not None
+                and 200 <= second.status_code < 300
+            )
+
+            if first_success and second_success:
+
+                findings.append(
+                    issue(
+                        issue_id="bola_cross_identity_access",
+                        severity="critical",
+                        category="bola",
+                        title="Potential BOLA: both authorized identities received successful access",
+                        where=f"{method} {target_url}",
+                        why=(
+                            "The same object request returned a successful response "
+                            "for both supplied authorized identities. This is evidence "
+                            "that object-level authorization requires review."
+                        ),
+                        hint=(
+                            "Verify object ownership/authorization on the server "
+                            "using the authenticated identity before returning the object."
+                        ),
+                        evidence={
+                            "method": method,
+                            "url": target_url,
+                            "identity_a_status": first.status_code,
+                            "identity_b_status": second.status_code,
+                        },
+                        code_snippet=(
+                            "if resource.owner_id != current_user.id:\n"
+                            "    raise HTTPException(status_code=403)\n"
+                        ),
+                    )
+                )
 
     return findings
 
 
-def analyze_endpoint_url(url: str) -> dict:
+def evaluate_openapi_schema(spec: dict) -> list:
+
     """
-    Performs static structural audit on an API URL string.
+    Static OpenAPI checks remain useful, but findings are explicitly
+    marked as specification observations rather than confirmed runtime
+    vulnerabilities.
     """
+
     findings = []
+
+    paths = spec.get("paths", {})
+
+    if not paths:
+        return findings
+
+    for path, methods in paths.items():
+
+        if not isinstance(methods, dict):
+            continue
+
+        for method, details in methods.items():
+
+            if method.lower() not in {
+                "get",
+                "post",
+                "put",
+                "patch",
+                "delete",
+                "head",
+                "options",
+            }:
+                continue
+
+            if not isinstance(details, dict):
+                continue
+
+            security = details.get(
+                "security",
+                spec.get("security", None),
+            )
+
+            if security == []:
+
+                findings.append(
+                    issue(
+                        issue_id="openapi_explicit_public_operation",
+                        severity="info",
+                        category="authentication",
+                        title="OpenAPI operation explicitly declares no security",
+                        where=f"{method.upper()} {path}",
+                        why=(
+                            "The OpenAPI document explicitly declares an empty "
+                            "security requirement for this operation."
+                        ),
+                        hint=(
+                            "Confirm that this endpoint is intentionally public."
+                        ),
+                    )
+                )
+
+            parameters = details.get("parameters", [])
+
+            for parameter in parameters:
+
+                if not isinstance(parameter, dict):
+                    continue
+
+                name = str(parameter.get("name", "")).lower()
+
+                if name in {
+                    "id",
+                    "user_id",
+                    "account_id",
+                    "owner_id",
+                    "order_id",
+                }:
+
+                    findings.append(
+                        issue(
+                            issue_id="object_identifier_requires_runtime_test",
+                            severity="info",
+                            category="bola",
+                            title="Object identifier requires authorization test",
+                            where=f"{method.upper()} {path}",
+                            why=(
+                                f"Parameter '{name}' identifies an object. "
+                                "The OpenAPI document alone cannot prove BOLA."
+                            ),
+                            hint=(
+                                "Run the authorized cross-identity test with "
+                                "two test identities and explicit object IDs."
+                            ),
+                        )
+                    )
+
+    return findings
+
+
+def calculate_score(findings: List[Dict[str, Any]]) -> int:
+
     score = 100
-    sanitized_url = url.strip()
 
-    if not sanitized_url:
-        return {
-            "url": url,
-            "sanitizedUrl": "",
-            "score": 0,
-            "status": "critical",
-            "issues": [{
-                "id": "empty_url",
-                "severity": "critical",
-                "category": "structure",
-                "title": "Empty Target URL",
-                "where": "Input parameter",
-                "why": "No URL string provided to analyze.",
-                "hint": "Provide a valid HTTP/HTTPS API URL."
-            }]
-        }
+    for finding in findings:
 
-    try:
-        parsed = urllib.parse.urlparse(sanitized_url)
-    except Exception as e:
-        return {
-            "url": url,
-            "sanitizedUrl": sanitized_url,
-            "score": 0,
-            "status": "critical",
-            "issues": [{
-                "id": "malformed_url",
-                "severity": "critical",
-                "category": "structure",
-                "title": "Malformed URL Format",
-                "where": "URL String",
-                "why": f"Failed to parse URL: {str(e)}",
-                "hint": "Check URL syntax rules."
-            }]
-        }
+        severity = finding.get("severity", "info")
 
-    # BOLA Parameter Check
-    if any(res in parsed.path.lower() for res in ['/orders/', '/users/', '/accounts/', '/invoices/']) and ('user_id' in parsed.query.lower() or 'account_id' in parsed.query.lower()):
-        score -= 40
-        findings.append({
-            "id": "bola_vulnerability",
-            "severity": "critical",
-            "category": "bola",
-            "title": "Broken Object-Level Authorization Pattern (BOLA / IDOR)",
-            "where": f"Path '{parsed.path}' & Query '{parsed.query}'",
-            "why": "Endpoint exposes object identifiers while accepting client-supplied user_id parameters.",
-            "hint": "Verify object ownership server-side using session JWT token claims instead of query parameters.",
-            "codeSnippet": "# FastAPI Authorization Guard:\nif order.owner_id != current_user.id:\n    raise HTTPException(status_code=403, detail='Access Forbidden')"
-        })
+        score -= SEVERITY_WEIGHT.get(
+            severity,
+            3,
+        )
 
-    # Excessive Data Exposure Check
-    if any(param in parsed.query.lower() for param in ['include_private', 'full_profile', 'debug=true', 'all_fields']):
-        score -= 30
-        findings.append({
-            "id": "excessive_data_exposure",
-            "severity": "critical",
-            "category": "data_exposure",
-            "title": "Excessive Data Exposure Parameter Flag",
-            "where": f"Query parameters '{parsed.query}'",
-            "why": "Passing parameters that request unredacted or full database records exposes sensitive PII fields.",
-            "hint": "Use explicit Pydantic / DTO response schemas to filter sensitive properties on the server.",
-            "codeSnippet": "class PublicUserDTO(BaseModel):\n    id: str\n    username: str\n    # Exclude password_hash or internal secrets"
-        })
+    return max(0, min(100, score))
 
-    # Rate Limiting & Auth Check
-    if any(auth_path in parsed.path.lower() for auth_path in ['/auth', '/login', '/otp-verify', '/token']):
-        score -= 20
-        findings.append({
-            "id": "auth_rate_limit_check",
-            "severity": "warning",
-            "category": "rate_limit",
-            "title": "Sensitive Authentication Endpoint - Rate Limiting Recommended",
-            "where": f"Auth Path '{parsed.path}'",
-            "why": "Authentication endpoints require strict sliding-window rate limiting to prevent brute-force attacks.",
-            "hint": "Enforce Redis-backed rate limiting middleware on auth routes.",
-            "codeSnippet": "# Redis Rate Limit Middleware:\nif await redis.incr(ip) > 5:\n    return JSONResponse({'error': 'Too Many Requests'}, status_code=429)"
-        })
 
-    # Insecure Transport Scheme
-    if parsed.scheme == "http":
-        score -= 15
-        findings.append({
-            "id": "insecure_transport",
-            "severity": "warning",
-            "category": "security",
-            "title": "Insecure HTTP Protocol",
-            "where": "Scheme prefix 'http://'",
-            "why": "Unencrypted HTTP transport exposes API tokens and headers to network eavesdropping.",
-            "hint": "Upgrade endpoint to HTTPS and enforce HSTS headers."
-        })
+def calculate_status(
+    score: int,
+    findings: List[Dict[str, Any]],
+) -> str:
 
-    score = max(0, min(100, score))
-    status = "critical" if score < 60 or any(f["severity"] == "critical" for f in findings) else ("warning" if score < 90 or len(findings) > 0 else "clean")
+    if any(
+        finding.get("severity") == "critical"
+        for finding in findings
+    ):
+        return "critical"
+
+    if any(
+        finding.get("severity") == "high"
+        for finding in findings
+    ):
+        return "critical"
+
+    if score < 90:
+        return "warning"
+
+    return "clean"
+
+
+def analyze_endpoint_url(url: str) -> Dict[str, Any]:
+
+    """
+    Compatibility wrapper.
+
+    This function no longer claims that URL patterns prove
+    vulnerabilities. It only validates the URL structure.
+    """
+
+    parsed = urlparse(url.strip())
+
+    findings = []
+
+    if parsed.scheme not in {"http", "https"}:
+
+        findings.append(
+            issue(
+                issue_id="invalid_scheme",
+                severity="critical",
+                category="structure",
+                title="Invalid URL scheme",
+                where=url,
+                why="Only HTTP and HTTPS targets are supported.",
+                hint="Use an http:// or https:// URL.",
+            )
+        )
+
+    score = calculate_score(findings)
 
     return {
         "url": url,
-        "sanitizedUrl": sanitized_url,
+        "sanitizedUrl": url.strip(),
         "score": score,
-        "status": status,
+        "status": calculate_status(score, findings),
         "issues": findings,
         "anatomy": {
-            "scheme": parsed.scheme or "http",
-            "host": parsed.netloc or "unknown",
-            "port": parsed.port or ("443" if parsed.scheme == "https" else "80"),
+            "scheme": parsed.scheme,
+            "host": parsed.netloc,
+            "port": parsed.port or (
+                443 if parsed.scheme == "https" else 80
+            ),
             "path": parsed.path or "/",
             "query": parsed.query or "(none)",
-            "hash": parsed.fragment or "(none)"
-        }
+            "hash": parsed.fragment or "(none)",
+        },
     }
