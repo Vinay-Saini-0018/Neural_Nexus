@@ -24,6 +24,7 @@ const elements = {
     loaderStatusText: document.getElementById('loader-status-text'),
     aiTraceBox: document.getElementById('ai-trace-box'),
     resultsWrapper: document.getElementById('results-wrapper'),
+    progressBarFill: document.getElementById('progress-bar-fill'),
 
     // Summary Card
     gaugeFillCircle: document.getElementById('gauge-fill-circle'),
@@ -59,11 +60,7 @@ const elements = {
     historyList: document.getElementById('history-list'),
     btnClearHistory: document.getElementById('btn-clear-history'),
 
-    //-------------
-    authorizedScan: document.getElementById('authorized-scan'),
-    primaryToken: document.getElementById('primary-token'),
-    secondaryToken: document.getElementById('secondary-token'),
-    objectId: document.getElementById('object-id'),
+
 
     // Modal
     backendModal: document.getElementById('backend-modal'),
@@ -211,21 +208,45 @@ async function runInspection(rawUrl) {
     elements.aiTraceBox.innerHTML = '';
 
     const traceSteps = [
-        "🔐 Step 1/5: Validating authorized scan configuration...",
-        "📘 Step 2/5: Detecting endpoint or OpenAPI specification...",
-        "🌐 Step 3/5: Performing bounded runtime HTTP checks...",
-        "🔎 Step 4/5: Analyzing response data and authorization behavior...",
-        "📊 Step 5/5: Building evidence-backed security report..."
+        "Validating scan configuration...",
+        "Detecting endpoint or OpenAPI specification...",
+        "Performing HTTP checks...",
+        "Analyzing response data and authorization...",
+        "Building security report..."
     ];
 
+    if (elements.progressBarFill) elements.progressBarFill.style.width = '0%';
+
     for (let i = 0; i < traceSteps.length; i++) {
-        elements.loaderStatusText.textContent = traceSteps[i];
+        elements.loaderStatusText.textContent = "Checking: " + traceSteps[i];
+        
+        const allSteps = elements.aiTraceBox.querySelectorAll('.trace-step');
+        allSteps.forEach(el => {
+            if (!el.textContent.startsWith('✅')) {
+                el.textContent = '✅ Completed: ' + el.textContent.replace('⏳ In progress: ', '');
+                el.classList.remove('step-active');
+            }
+        });
+
         const stepEl = document.createElement('div');
-        stepEl.className = 'trace-step';
-        stepEl.textContent = traceSteps[i];
+        stepEl.className = 'trace-step step-active';
+        stepEl.textContent = "⏳ In progress: " + traceSteps[i];
         elements.aiTraceBox.appendChild(stepEl);
-        await new Promise(r => setTimeout(r, 220));
+
+        if (elements.progressBarFill) {
+            const progress = ((i + 1) / traceSteps.length) * 100;
+            elements.progressBarFill.style.width = progress + '%';
+        }
+        await new Promise(r => setTimeout(r, 600));
     }
+    
+    const finalSteps = elements.aiTraceBox.querySelectorAll('.trace-step');
+    finalSteps.forEach(el => {
+        if (el.textContent.startsWith('⏳')) {
+            el.textContent = '✅ Completed: ' + el.textContent.replace('⏳ In progress: ', '');
+            el.classList.remove('step-active');
+        }
+    });
 
     try {
         const result = await fetchFromBackend(rawUrl);
@@ -250,40 +271,16 @@ async function runInspection(rawUrl) {
 
 async function fetchFromBackend(url) {
 
-    const authorized =
-        elements.authorizedScan.checked;
-
-    if (!authorized) {
-
-        throw new Error(
-            'Please confirm that you are authorized to test this API.'
-        );
-    }
-
-    const objectId =
-        elements.objectId.value.trim();
-
     const payload = {
         url: url,
-
         scan: {
             authorized: true,
-
-            bearer_token:
-                elements.primaryToken.value.trim() || null,
-
-            second_bearer_token:
-                elements.secondaryToken.value.trim() || null,
-
-            object_ids:
-                objectId ? [objectId] : [],
-
+            bearer_token: null,
+            second_bearer_token: null,
+            object_ids: [],
             timeout_seconds: 8,
-
             rate_test_requests: 6,
-
             rate_test_delay_seconds: 0.25,
-
             max_endpoints: 30
         }
     };
